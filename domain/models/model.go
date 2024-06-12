@@ -32,10 +32,11 @@ type User struct {
 
 type Product struct {
 	gorm.Model
-	Name       string
-	Descrition string
-	Price      float64
-	Carts      []Cart `gorm:"many2many:cart_product"`
+	Name        string
+	Description string
+	Price       float64
+	Qty         float64
+	Carts       []Cart `gorm:"many2many:cart_product"`
 }
 
 type Payment struct {

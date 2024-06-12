@@ -2,6 +2,7 @@ package config
 
 import (
 	"fiber-e-commerce-system-API/domain/models"
+	"fiber-e-commerce-system-API/domain/product"
 	"fiber-e-commerce-system-API/domain/user"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -34,16 +35,22 @@ func InitDB(app *fiber.App) {
 
 	DB.AutoMigrate(&models.User{}, &models.Cart{}, &models.Product{}, &models.Payment{}, &models.CartProduct{})
 
-	userRepository := user.NewRespository(DB)
+	userRepo := user.NewRespository(DB)
+	productRepo := product.NewProductRepository(DB)
 
-	userService := user.NewUserService(userRepository)
+	userService := user.NewUserService(userRepo)
+	productService := product.NewProductService(productRepo) //Cannot use 'productRepo' (type ProductRepository) as the type productRepository
 
 	userHandler := user.NewHandler(userService)
+	productHandler := product.NewProducthandler(productService)
 
 	app.Post("/users/register", userHandler.CreateUser)
 	app.Post("/users", userHandler.Login)
 	app.Get("/users", userHandler.Index)
 	app.Put("/users/:id", userHandler.UpdateUser)
 	app.Delete("/users/:id", userHandler.DeleteUser)
+
+	app.Post("/products/create", productHandler.CreateProduct)
+	app.Get("/products", productHandler.GetAllProduct)
 
 }
