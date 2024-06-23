@@ -4,28 +4,29 @@ import (
 	"errors"
 	"fiber-e-commerce-system-API/domain/models"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
-type UserService struct {
-	userRepository UserRepository
+type Service interface {
+	RegisterUser(input RegisterUserInput) (models.User, error)
+	Login(input LoginInput) (models.User, error)
+	IsEmailAvailable(input CheckEmailInput) (bool, error)
+	GetUserByID(ID int) (models.User, error)
+	GetAllUser() ([]models.User, error)
+	UpdateUser(input FormUpdateUserInput) (models.User, error)
 }
 
-func NewUserService(userRepository UserRepository) *UserService {
-	return &UserService{userRepository: userRepository}
+type service struct {
+	repository Repository
 }
 
-func (s *UserService) CreateUser(input UserInput) (models.User, error) {
-	user := models.User{
-		Name:    input.Name,
-		Email:   input.Email,
-		Role:    input.Role,
-		Street:  input.Street,
-		City:    input.City,
-		State:   input.State,
-		ZipCode: input.ZipCode,
-		Country: input.Country,
-	}
+func NewService(repository Repository) *service {
+	return &service{repository}
+}
+
+func (s *service) RegisterUser(input RegisterUserInput) (models.User, error) {
+	user := models.User{}
+	user.Name = input.Name
+	user.Email = input.Email
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
 	if err != nil {
@@ -33,29 +34,27 @@ func (s *UserService) CreateUser(input UserInput) (models.User, error) {
 	}
 
 	user.Password = string(passwordHash)
+	user.Role = "user"
 
-	return s.userRepository.Create(user)
-}
-
-func (s *UserService) GetAll() ([]models.User, error) {
-	users, err := s.userRepository.GetAll()
+	newUser, err := s.repository.Save(user)
 	if err != nil {
-		return nil, err
+		return newUser, err
 	}
 
-	return users, nil
+	return newUser, nil
 }
 
-func (s *UserService) Login(input LoginInput) (models.User, error) {
+func (s *service) Login(input LoginInput) (models.User, error) {
 	email := input.Email
 	password := input.Password
 
-	user, err := s.userRepository.FindByEmail(email)
+	user, err := s.repository.FindByEmail(email)
 	if err != nil {
-		return user, nil
+		return user, err
 	}
+
 	if user.ID == 0 {
-		return user, errors.New("No User Found on That Email")
+		return user, errors.New("No user found on that email")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
@@ -66,40 +65,56 @@ func (s *UserService) Login(input LoginInput) (models.User, error) {
 	return user, nil
 }
 
-func (s *UserService) GetByID(userID uint) (*models.User, error) {
-	return s.userRepository.GetById(userID)
+func (s *service) IsEmailAvailable(input CheckEmailInput) (bool, error) {
+	email := input.Email
+
+	user, err := s.repository.FindByEmail(email)
+	if err != nil {
+		return false, err
+	}
+
+	if user.ID == 0 {
+		return true, nil
+	}
+
+	return false, nil
+
 }
 
-func (s *UserService) UpdateUser(userID uint, input models.User) (*models.User, error) {
-	user, err := s.userRepository.GetById(userID)
+func (s *service) GetUserByID(ID int) (models.User, error) {
+	user, err := s.repository.FindByID(ID)
 	if err != nil {
-		return nil, err
+		return user, err
+	}
+
+	if user.ID == 0 {
+		return user, errors.New("No user found on that ID")
+	}
+
+	return user, nil
+}
+
+func (s *service) GetAllUser() ([]models.User, error) {
+	user, err := s.repository.FindAll()
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (s *service) UpdateUser(input FormUpdateUserInput) (models.User, error) {
+	user, err := s.repository.FindByID(input.ID)
+	if err != nil {
+		return user, err
 	}
 
 	user.Name = input.Name
 	user.Email = input.Email
-	user.Role = input.Role
-	user.Street = input.Street
-	user.City = input.City
-	user.State = input.State
-	user.ZipCode = input.ZipCode
-	user.Country = input.Country
 
-	if input.Password != "" {
-		passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
-		if err != nil {
-			return nil, err
-		}
-		user.Password = string(passwordHash)
-	}
-	return s.userRepository.UpdateUser(user)
-}
-
-func (s *UserService) DeleteUser(userID uint) (*models.User, error) {
-	user := &models.User{Model: gorm.Model{ID: userID}}
-	deletedUser, err := s.userRepository.DeleteUser(user)
+	updatedUser, err := s.repository.Update(user)
 	if err != nil {
-		return nil, err
+		return updatedUser, err
 	}
-	return deletedUser, nil
+
+	return updatedUser, nil
 }

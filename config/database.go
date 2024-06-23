@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fiber-e-commerce-system-API/domain/models"
-	"fiber-e-commerce-system-API/domain/product"
+	"fiber-e-commerce-system-API/auth"
 	"fiber-e-commerce-system-API/domain/user"
+	"fiber-e-commerce-system-API/handler"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -33,24 +33,16 @@ func InitDB(app *fiber.App) {
 		log.Fatalf("Error Connecting to the database: %v", err)
 	}
 
-	DB.AutoMigrate(&models.User{}, &models.Cart{}, &models.Product{}, &models.Payment{}, &models.CartProduct{})
+	userRepository := user.NewRepository(DB)
+	userService := user.NewService(userRepository)
+	authService := auth.NewService()
 
-	userRepo := user.NewRespository(DB)
-	productRepo := product.NewProductRepository(DB)
+	userHandler := handler.NewUserHandler(userService, authService)
 
-	userService := user.NewUserService(userRepo)
-	productService := product.NewProductService(productRepo) //Cannot use 'productRepo' (type ProductRepository) as the type productRepository
+	api := app.Group("api/v1")
 
-	userHandler := user.NewHandler(userService)
-	productHandler := product.NewProducthandler(productService)
-
-	app.Post("/users/register", userHandler.CreateUser)
-	app.Post("/users", userHandler.Login)
-	app.Get("/users", userHandler.Index)
-	app.Put("/users/:id", userHandler.UpdateUser)
-	app.Delete("/users/:id", userHandler.DeleteUser)
-
-	app.Post("/products/create", productHandler.CreateProduct)
-	app.Get("/products", productHandler.GetAllProduct)
-
+	api.Get("/users", userHandler.FindAll)
+	api.Post("/users/register", userHandler.RegisterUser)
+	api.Post("/users/login", userHandler.Login)
+	api.Get("/users/checkemail", userHandler.CheckEmailAvailable)
 }

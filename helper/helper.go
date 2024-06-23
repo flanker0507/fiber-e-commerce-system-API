@@ -36,3 +36,15 @@ func FormatValidateError(err error) []string {
 	}
 	return errors
 }
+
+//
+//// Fungsi untuk mengonversi error validasi
+//func formatValidationError(err error) map[string]string {
+//	errMessages := make(map[string]string)
+//	if errs, ok := err.(validator.ValidationErrors); ok {
+//		for _, e := range errs {
+//			errMessages[e.Field()] = getErrorMessage(e)
+//		}
+//	}
+//	return errMessages
+//}
