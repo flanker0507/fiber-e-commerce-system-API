@@ -20,8 +20,7 @@ func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&input)
 	if err != nil {
-		response := helper.APIResponse("Create product failed", http.StatusUnprocessableEntity, "error", err.Error())
-		return c.JSON(response)
+		return clientError(c, http.StatusBadRequest, "invalid request")
 	}
 
 	// Validasi menggunakan validator
@@ -33,21 +32,19 @@ func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
 
 	newProduct, err := h.productService.CreateProduct(input)
 	if err != nil {
-		response := helper.APIResponse("Create product failed", http.StatusUnprocessableEntity, "error", err.Error())
-		return c.JSON(response)
+		return clientError(c, http.StatusInternalServerError, "internal server error")
 	}
 
 	formatter := products.FormatProduct(newProduct)
 	respone := helper.APIResponse("Create product Success", http.StatusCreated, "success", formatter)
-	return c.JSON(respone)
+	return c.Status(http.StatusCreated).JSON(respone)
 }
 
 func (h *productHandler) GetAllUser(c *fiber.Ctx) error {
 	product, err := h.productService.GetAllProduct()
 	if err != nil {
-		response := helper.APIResponse("Product Not Found", http.StatusUnprocessableEntity, "error", err.Error())
-		return c.JSON(response)
+		return clientError(c, http.StatusInternalServerError, "internal server error")
 	}
 	respone := helper.APIResponse("Get All product Succes", http.StatusOK, "success", product)
-	return c.JSON(respone)
+	return c.Status(http.StatusOK).JSON(respone)
 }

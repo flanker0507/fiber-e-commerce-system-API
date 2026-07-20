@@ -21,7 +21,7 @@ func NewRepository(db *gorm.DB) *repository {
 }
 
 func (r *repository) Save(product models.Product) (models.Product, error) {
-	err := r.db.Debug().Create(&product).Error
+	err := r.db.Create(&product).Error
 	if err != nil {
 		return product, err
 	}
@@ -31,7 +31,7 @@ func (r *repository) Save(product models.Product) (models.Product, error) {
 func (r *repository) FindByID(ID int) (models.Product, error) {
 	var product models.Product
 
-	err := r.db.Debug().Where("id = ?").Find(&product).Error
+	err := r.db.Where("id = ?").Find(&product).Error
 	if err != nil {
 		return product, err
 	}
@@ -39,7 +39,7 @@ func (r *repository) FindByID(ID int) (models.Product, error) {
 }
 
 func (r *repository) Update(product models.Product) (models.Product, error) {
-	err := r.db.Debug().Save(&product).Error
+	err := r.db.Save(&product).Error
 	if err != nil {
 		return product, err
 	}
@@ -49,7 +49,7 @@ func (r *repository) Update(product models.Product) (models.Product, error) {
 func (r *repository) FindAll() ([]models.Product, error) {
 	var product []models.Product
 
-	err := r.db.Debug().Find(&product).Error
+	err := r.db.Find(&product).Error
 	if err != nil {
 		return product, err
 	}

@@ -1,14 +1,24 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/veritrans/go-midtrans"
 )
 
-var MidtransClient midtrans.Client
+func NewMidtransClient(cfg Config) (midtrans.Client, error) {
+	client := midtrans.NewClient()
+	client.ServerKey = cfg.MidtransServerKey
+	client.ClientKey = cfg.MidtransClientKey
 
-func InitMidtrans() {
-	MidtransClient = midtrans.NewClient()
-	MidtransClient.ServerKey = "YOUR_SERVER_KEY"
-	MidtransClient.ClientKey = "YOUR_CLIENT_KEY"
-	MidtransClient.APIEnvType = midtrans.Sandbox // Use midtrans.Production for production environment
+	switch cfg.MidtransEnv {
+	case "sandbox":
+		client.APIEnvType = midtrans.Sandbox
+	case "production":
+		client.APIEnvType = midtrans.Production
+	default:
+		return midtrans.Client{}, fmt.Errorf("invalid environment variable MIDTRANS_ENV")
+	}
+
+	return client, nil
 }

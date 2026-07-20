@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -11,12 +12,11 @@ type Service interface {
 }
 
 type jwtService struct {
+	secret []byte
 }
 
-var SECRET_KEY = []byte("YUDA_G@NTENG")
-
-func NewService() *jwtService {
-	return &jwtService{}
+func NewService(secret string) *jwtService {
+	return &jwtService{secret: []byte(secret)}
 }
 
 func (s *jwtService) GenerateToken(userID int) (string, error) {
@@ -25,7 +25,7 @@ func (s *jwtService) GenerateToken(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
-	signedToken, err := token.SignedString(SECRET_KEY)
+	signedToken, err := token.SignedString(s.secret)
 	if err != nil {
 		return signedToken, err
 	}
@@ -35,17 +35,13 @@ func (s *jwtService) GenerateToken(userID int) (string, error) {
 
 func (s *jwtService) ValidateToken(encodedToken string) (*jwt.Token, error) {
 	token, err := jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-
-		if !ok {
-			return nil, errors.New("Invalid token")
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("invalid signing method")
 		}
-		return []byte(SECRET_KEY), nil
-
+		return s.secret, nil
 	})
 	if err != nil {
 		return token, err
 	}
 	return token, nil
-
 }
