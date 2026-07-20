@@ -3,47 +3,47 @@ package auth
 import (
 	"fiber-e-commerce-system-API/domain/user"
 	"fiber-e-commerce-system-API/helper"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gofiber/fiber/v2"
+	"math"
 	"net/http"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gofiber/fiber/v2"
 )
 
 func AuthMiddleware(AuthService Service, UserService user.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authHeader := c.Get("Authorization")
-
-		if !strings.Contains(authHeader, "Bearer") {
-			response := helper.APIResponse("Unauthorization", http.StatusUnauthorized, "error", nil)
-			return c.Status(http.StatusUnauthorized).JSON(response)
+		authHeader := strings.Fields(c.Get("Authorization"))
+		if len(authHeader) != 2 || !strings.EqualFold(authHeader[0], "Bearer") || authHeader[1] == "" {
+			return unauthorized(c)
 		}
 
-		tokenString := ""
-		arrayToken := strings.Split(authHeader, " ")
-		if len(arrayToken) == 2 {
-			tokenString = arrayToken[1]
-		}
-
-		token, err := AuthService.ValidateToken(tokenString)
-		if err != nil {
-			response := helper.APIResponse("Unauthorization", http.StatusUnauthorized, "error", nil)
-			return c.Status(http.StatusUnauthorized).JSON(response)
+		token, err := AuthService.ValidateToken(authHeader[1])
+		if err != nil || token == nil || !token.Valid {
+			return unauthorized(c)
 		}
 
 		claim, ok := token.Claims.(jwt.MapClaims)
-		if !ok || !token.Valid {
-			response := helper.APIResponse("Unauthorization", http.StatusUnauthorized, "error", nil)
-			return c.Status(http.StatusUnauthorized).JSON(response)
+		if !ok {
+			return unauthorized(c)
 		}
 
-		userID := int(claim["user_id"].(float64))
+		claimUserID, ok := claim["user_id"].(float64)
+		if !ok || claimUserID <= 0 || claimUserID != math.Trunc(claimUserID) {
+			return unauthorized(c)
+		}
+		userID := int(claimUserID)
 
 		newUser, err := UserService.GetUserByID(userID)
-		if err != nil {
-			response := helper.APIResponse("Unauthorization", http.StatusUnauthorized, "error", nil)
-			return c.Status(http.StatusUnauthorized).JSON(response)
+		if err != nil || newUser.ID == 0 {
+			return unauthorized(c)
 		}
-		c.Locals("currentUser", newUser) // Use c.Locals to set the user object
+		c.Locals("currentUser", newUser)
 		return c.Next()
 	}
+}
+
+func unauthorized(c *fiber.Ctx) error {
+	response := helper.APIResponse("authentication failed", http.StatusUnauthorized, "error", nil)
+	return c.Status(http.StatusUnauthorized).JSON(response)
 }

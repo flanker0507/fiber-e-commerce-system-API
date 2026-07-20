@@ -7,9 +7,9 @@ type User struct {
 	ID        int
 	Name      string
 	Email     string
-	Password  string
+	Password  string `json:"-"`
 	Role      string
-	Token     string
+	Token     string `json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -45,7 +45,7 @@ type Cart struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Items     []CartItem `gorm:"foreignKey:CartID"`
-	User      User
+	User      User       `json:"-"`
 }
 
 //// CartItem represents an item in the cart

@@ -22,7 +22,7 @@ func NewRepository(db *gorm.DB) *repository {
 }
 
 func (r *repository) Save(user models.User) (models.User, error) {
-	err := r.db.Debug().Create(&user).Error
+	err := r.db.Create(&user).Error
 	if err != nil {
 		return user, err
 	}
@@ -33,7 +33,7 @@ func (r *repository) Save(user models.User) (models.User, error) {
 func (r *repository) FindByEmail(email string) (models.User, error) {
 	var user models.User
 
-	err := r.db.Debug().Where("email = ?", email).Find(&user).Error
+	err := r.db.Where("email = ?", email).Find(&user).Error
 	if err != nil {
 		return user, err
 	}
@@ -44,7 +44,7 @@ func (r *repository) FindByEmail(email string) (models.User, error) {
 func (r *repository) FindByID(id int) (models.User, error) {
 	var user models.User
 
-	err := r.db.Debug().Where("id = ?", id).Find(&user).Error
+	err := r.db.Where("id = ?", id).Find(&user).Error
 	if err != nil {
 		return user, err
 	}
@@ -53,7 +53,7 @@ func (r *repository) FindByID(id int) (models.User, error) {
 }
 
 func (r *repository) Update(user models.User) (models.User, error) {
-	err := r.db.Debug().Save(&user).Error
+	err := r.db.Save(&user).Error
 
 	if err != nil {
 		return user, err
@@ -65,7 +65,7 @@ func (r *repository) Update(user models.User) (models.User, error) {
 func (r *repository) FindAll() ([]models.User, error) {
 	var user []models.User
 
-	err := r.db.Debug().Find(&user).Error
+	err := r.db.Find(&user).Error
 	if err != nil {
 		return user, err
 	}

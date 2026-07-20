@@ -6,7 +6,7 @@ type CreateTransactionInput struct {
 	CartID int `json:"cart_id"`
 	UserID int `json:"user_id"`
 	Total  float64
-	User   models.User
+	User   models.User `json:"-"`
 }
 
 type TransactionNotificationInput struct {
